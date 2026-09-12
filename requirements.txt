@@ -1,0 +1,2 @@
+piper_tts==1.3.0
+pyAudio==0.2.14
