@@ -1,8 +1,9 @@
+import os
 import pyaudio
 import string
 import tkinter as tk
-from tkinter import ttk
 
+from tkinter import ttk
 from glob import glob
 from os import path
 from piper.voice import PiperVoice
@@ -13,7 +14,17 @@ class TTS_APP():
         self.available_models = [path.basename(x) for x in glob(path.join('Voices', '*.onnx'))]
         self.voice = None
         self.prev_voice = None
-        self.py_audio = pyaudio.PyAudio()
+
+        # special handling to drop warnings when running PyAudio on Linux
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        old_stderr = os.dup(2)
+        try:
+            os.dup2(devnull, 2)
+            self.py_audio = pyaudio.PyAudio()
+        finally:
+            os.dup2(old_stderr, 2)
+            os.close(old_stderr)
+            os.close(devnull)
 
     def get_voices(self):
         return self.available_models
@@ -42,8 +53,6 @@ class TTS_APP():
         stream.close()
 
 
-tts_app = TTS_APP()
-
 def get_audio_devices():
     p = pyaudio.PyAudio()
     info = p.get_host_api_info_by_index(0)
@@ -60,62 +69,64 @@ def play_tts():
     tts_app.play_tts(text, combobox_piper_voice.get(), audio_outputs[combobox_audio_output.get()])
     text_text_box.delete('1.0', tk.END)
 
+if __name__ == '__main__':
+    tts_app = TTS_APP()
 
-# Main window
-root = tk.Tk()
-root.title("TTS Player")
-root.geometry("500x250")
+    # Main window
+    root = tk.Tk()
+    root.title("TTS Player")
+    root.geometry("500x250")
 
-# Make the second column expandable
-root.columnconfigure(1, weight=1)
-root.rowconfigure(2, weight=1)
+    # Make the second column expandable
+    root.columnconfigure(1, weight=1)
+    root.rowconfigure(2, weight=1)
 
-ttk.Label(root, text="Audio Outout").grid(
-    row=0, column=0, padx=10, pady=10, sticky="w"
-)
+    ttk.Label(root, text="Audio Outout").grid(
+        row=0, column=0, padx=10, pady=10, sticky="w"
+    )
 
-audio_outputs = get_audio_devices()
-combobox_audio_output = ttk.Combobox(
-    root,
-    values=list(audio_outputs.keys()),
-    state="readonly"
-)
-combobox_audio_output.current(list(audio_outputs.keys()).index('default'))
-combobox_audio_output.grid(
-    row=0, column=1, padx=10, pady=10, sticky="ew"
-)
+    audio_outputs = get_audio_devices()
+    combobox_audio_output = ttk.Combobox(
+        root,
+        values=list(audio_outputs.keys()),
+        state="readonly"
+    )
+    combobox_audio_output.current(list(audio_outputs.keys()).index('default'))
+    combobox_audio_output.grid(
+        row=0, column=1, padx=10, pady=10, sticky="ew"
+    )
 
-ttk.Label(root, text="Piper TTS Voice").grid(
-    row=1, column=0, padx=10, pady=10, sticky="w"
-)
+    ttk.Label(root, text="Piper TTS Voice").grid(
+        row=1, column=0, padx=10, pady=10, sticky="w"
+    )
 
-piper_voices = tts_app.get_voices()
-combobox_piper_voice = ttk.Combobox(
-    root,
-    values=piper_voices,
-    state="readonly"
-)
-combobox_piper_voice.current(0)
-combobox_piper_voice.grid(
-    row=1, column=1, padx=10, pady=10, sticky="ew"
-)
+    piper_voices = tts_app.get_voices()
+    combobox_piper_voice = ttk.Combobox(
+        root,
+        values=piper_voices,
+        state="readonly"
+    )
+    combobox_piper_voice.current(0)
+    combobox_piper_voice.grid(
+        row=1, column=1, padx=10, pady=10, sticky="ew"
+    )
 
-text_text_box = tk.Text(root, height=5, wrap="word")
-text_text_box.grid(
-    row=2, column=0, columnspan=2,
-    padx=10, pady=10,
-    sticky="nsew"
-)
+    text_text_box = tk.Text(root, height=5, wrap="word")
+    text_text_box.grid(
+        row=2, column=0, columnspan=2,
+        padx=10, pady=10,
+        sticky="nsew"
+    )
 
-button_play = ttk.Button(
-    root,
-    text="Play TTS",
-    command=play_tts
-)
-button_play.grid(
-    row=3, column=1,
-    padx=10, pady=10,
-    sticky="e"
-)
+    button_play = ttk.Button(
+        root,
+        text="Play TTS",
+        command=play_tts
+    )
+    button_play.grid(
+        row=3, column=1,
+        padx=10, pady=10,
+        sticky="e"
+    )
 
-root.mainloop()
+    root.mainloop()
