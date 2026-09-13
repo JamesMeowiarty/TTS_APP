@@ -9,6 +9,7 @@
 - Install Application Dependicies
     - Open a Terminal and navigate to the Application directory
     - Run "pip install -r requirements.txt"
+    - NOTE: You may see errors on missing dependencies (aka compiler) and on Windows a link is provided on where to download it
     - Download a Voice into the Voices Folder
         - Samples and Voices can be found at https://rhasspy.github.io/piper-samples/
         - Click the "Download" Link on the chosen voice
