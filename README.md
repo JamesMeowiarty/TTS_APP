@@ -3,7 +3,7 @@
 ## Installing
 - Install Python
     - https://www.python.org/
-    - Click Download and select your Operating System (NOTE: Latest version should work, but was tested with 3.14 and 3.12)
+    - Click Download and select your Operating System (NOTE: Latest version should work, but was tested with 3.13 and 3.12)
     - Install Python (NOTE: For Windows you can use https://www.pythonguis.com/installation/install-tkinter-windows/ as a Guide)
 
 - Install Application Dependicies
