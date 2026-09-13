@@ -54,7 +54,17 @@ class TTS_APP():
 
 
 def get_audio_devices():
-    p = pyaudio.PyAudio()
+    # special handling to drop warnings when running PyAudio on Linux
+    devnull = os.open(os.devnull, os.O_WRONLY)
+    old_stderr = os.dup(2)
+    try:
+        os.dup2(devnull, 2)
+        p = pyaudio.PyAudio()
+    finally:
+        os.dup2(old_stderr, 2)
+        os.close(old_stderr)
+        os.close(devnull)
+
     info = p.get_host_api_info_by_index(0)
     numdevices = info.get('deviceCount')
 
@@ -66,6 +76,10 @@ def get_audio_devices():
 
 def play_tts():
     text = text_text_box.get('1.0', 'end-1c')
+    if text.strip() == "":
+        # Clears Text Box since the box may be filled with spaces or tabs
+        text_text_box.delete('1.0', tk.END)
+        return
     tts_app.play_tts(text, combobox_piper_voice.get(), audio_outputs[combobox_audio_output.get()])
     text_text_box.delete('1.0', tk.END)
 
@@ -91,7 +105,10 @@ if __name__ == '__main__':
         values=list(audio_outputs.keys()),
         state="readonly"
     )
-    combobox_audio_output.current(list(audio_outputs.keys()).index('default'))
+    try:
+        combobox_audio_output.current(list(audio_outputs.keys()).index('default'))
+    except:
+        combobox_audio_output.current(0)
     combobox_audio_output.grid(
         row=0, column=1, padx=10, pady=10, sticky="ew"
     )
