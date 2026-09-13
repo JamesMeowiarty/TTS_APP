@@ -8,7 +8,7 @@
 
 - Install Application Dependicies
     - Open a Terminal and navigate to the Application directory
-    - Run "pip -r requirements.txt"
+    - Run "pip install -r requirements.txt"
     - Download a Voice into the Voices Folder
         - Samples and Voices can be found at https://rhasspy.github.io/piper-samples/
         - Click the "Download" Link on the chosen voice
