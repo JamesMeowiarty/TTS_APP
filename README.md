@@ -6,6 +6,10 @@
     - Click Download and select your Operating System (NOTE: Latest version should work, but was tested with 3.13 and 3.12)
     - Install Python (NOTE: For Windows you can use https://www.pythonguis.com/installation/install-tkinter-windows/ as a Guide)
 
+- (Windows) Install the Microsoft Visual C++ package
+    - Download the Lastest supported version from https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170
+    - Install the package
+
 - Install Application Dependicies
     - Open a Terminal and navigate to the Application directory
     - Run "pip install -r requirements.txt"
