@@ -1,149 +1,79 @@
-import os
-import pyaudio
-import string
 import tkinter as tk
+import os
 
 from tkinter import ttk
-from glob import glob
-from os import path
-from piper.voice import PiperVoice
+from tts_app import TTS_APP
 
 
-class TTS_APP():
+class GUI_INTERFACE():
     def __init__(self):
-        self.available_models = [path.basename(x) for x in glob(path.join('Voices', '*.onnx'))]
-        self.voice = None
-        self.prev_voice = None
+        self.tts_app = TTS_APP()
+        self.audio_devices = None
+        self.get_audio_devices()
+        self.create_gui()
 
-        # special handling to drop warnings when running PyAudio on Linux
-        devnull = os.open(os.devnull, os.O_WRONLY)
-        old_stderr = os.dup(2)
+    def get_audio_devices(self):
+        self.audio_devices = self.tts_app.get_audio_devices()
+
+    def play_tts(self):
+        text = self.text_text_box.get('1.0', 'end-1c')
+        if text.strip() == "":
+            # Clears Text Box since the box may be filled with spaces or tabs
+            self.text_text_box.delete('1.0', tk.END)
+            return
+        self.tts_app.play_tts(text, self.combobox_piper_voice.get(), self.audio_devices[self.combobox_audio_output.get()])
+        self.text_text_box.delete('1.0', tk.END)
+
+    def refresh_piper(self):
+        self.tts_app.update_voices()
+        piper_voices = self.tts_app.get_voices()
+        self.combobox_piper_voice['values'] = piper_voices
+        if len(piper_voices) > 0:
+            self.combobox_piper_voice.current(0)
+
+    def refresh_audio(self):
+        audio_outputs = self.tts_app.get_audio_devices()
+        self.combobox_audio_output['values'] = list(audio_outputs.keys())
         try:
-            os.dup2(devnull, 2)
-            self.py_audio = pyaudio.PyAudio()
-        finally:
-            os.dup2(old_stderr, 2)
-            os.close(old_stderr)
-            os.close(devnull)
+            self.combobox_audio_output.current(list(self.audio_devices.keys()).index('default'))
+        except ValueError:
+            self.combobox_audio_output.current(0)
 
-    def get_voices(self):
-        return self.available_models
+    def create_gui(self):
+        root = tk.Tk()
+        root.title("TTS Player")
+        root.geometry("500x250")
 
-    def play_tts(self, text, voice, audio_output_index):
-        if voice != self.voice:
-            self.voice = PiperVoice.load(path.join('Voices', voice))
-            self.prev_voice = voice
-        chunks = self.voice.synthesize(text)
-        first_chunk = next(chunks)
+        root.columnconfigure(1, weight=1)
+        root.rowconfigure(2, weight=1)
 
-        stream = self.py_audio.open( # Open audio stream with correct settings
-            format=self.py_audio.get_format_from_width(first_chunk.sample_width),
-            channels=first_chunk.sample_channels,
-            rate=first_chunk.sample_rate,
-            output=True,
-            output_device_index=audio_output_index
-        )
+        ttk.Label(root, text="Audio Outout").grid(row=0, column=0, padx=10, pady=10, sticky="w")
 
-        stream.write(first_chunk.audio_int16_bytes)
+        self.combobox_audio_output = ttk.Combobox(root, values=list(self.audio_devices.keys()), state="readonly")
+        self.refresh_audio()
+        self.combobox_audio_output.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
 
-        for chunk in chunks:
-            stream.write(chunk.audio_int16_bytes)
+        button_audio_refresh = tk.Button(root, text="Refresh", command=self.refresh_audio)
+        button_audio_refresh.grid(row=0, column=2, pady=10, sticky="ew")
 
-        stream.stop_stream()
-        stream.close()
+        ttk.Label(root, text="Piper TTS Voice").grid(row=1, column=0, padx=10, pady=10, sticky="w")
 
+        piper_voices = self.tts_app.get_voices()
+        self.combobox_piper_voice = ttk.Combobox(root, values=piper_voices, state="readonly")
+        if len(piper_voices) > 0:
+            self.combobox_piper_voice.current(0)
+        self.combobox_piper_voice.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
 
-def get_audio_devices():
-    # special handling to drop warnings when running PyAudio on Linux
-    devnull = os.open(os.devnull, os.O_WRONLY)
-    old_stderr = os.dup(2)
-    try:
-        os.dup2(devnull, 2)
-        p = pyaudio.PyAudio()
-    finally:
-        os.dup2(old_stderr, 2)
-        os.close(old_stderr)
-        os.close(devnull)
+        button_piper_refresh = tk.Button(root, text="Refresh", command=self.refresh_piper)
+        button_piper_refresh.grid(row=1, column=2, pady=10, sticky="ew")
 
-    info = p.get_host_api_info_by_index(0)
-    numdevices = info.get('deviceCount')
+        self.text_text_box = tk.Text(root, height=5, wrap="word")
+        self.text_text_box.grid(row=2, column=0, columnspan=3, padx=10, pady=10,sticky="nsew")
 
-    audio_devices = {}
-    for i in range(0, numdevices):
-        if (p.get_device_info_by_host_api_device_index(0, i).get('maxOutputChannels')) > 0:
-            audio_devices[p.get_device_info_by_host_api_device_index(0, i).get('name')] = i
-    return audio_devices
+        button_play = ttk.Button(root, text="Play TTS", command=self.play_tts)
+        button_play.grid(row=3, column=1, padx=10, pady=10, sticky="e")
 
-def play_tts():
-    text = text_text_box.get('1.0', 'end-1c')
-    if text.strip() == "":
-        # Clears Text Box since the box may be filled with spaces or tabs
-        text_text_box.delete('1.0', tk.END)
-        return
-    tts_app.play_tts(text, combobox_piper_voice.get(), audio_outputs[combobox_audio_output.get()])
-    text_text_box.delete('1.0', tk.END)
+        root.mainloop()
 
 if __name__ == '__main__':
-    tts_app = TTS_APP()
-
-    # Main window
-    root = tk.Tk()
-    root.title("TTS Player")
-    root.geometry("500x250")
-
-    # Make the second column expandable
-    root.columnconfigure(1, weight=1)
-    root.rowconfigure(2, weight=1)
-
-    ttk.Label(root, text="Audio Outout").grid(
-        row=0, column=0, padx=10, pady=10, sticky="w"
-    )
-
-    audio_outputs = get_audio_devices()
-    combobox_audio_output = ttk.Combobox(
-        root,
-        values=list(audio_outputs.keys()),
-        state="readonly"
-    )
-    try:
-        combobox_audio_output.current(list(audio_outputs.keys()).index('default'))
-    except:
-        combobox_audio_output.current(0)
-    combobox_audio_output.grid(
-        row=0, column=1, padx=10, pady=10, sticky="ew"
-    )
-
-    ttk.Label(root, text="Piper TTS Voice").grid(
-        row=1, column=0, padx=10, pady=10, sticky="w"
-    )
-
-    piper_voices = tts_app.get_voices()
-    combobox_piper_voice = ttk.Combobox(
-        root,
-        values=piper_voices,
-        state="readonly"
-    )
-    combobox_piper_voice.current(0)
-    combobox_piper_voice.grid(
-        row=1, column=1, padx=10, pady=10, sticky="ew"
-    )
-
-    text_text_box = tk.Text(root, height=5, wrap="word")
-    text_text_box.grid(
-        row=2, column=0, columnspan=2,
-        padx=10, pady=10,
-        sticky="nsew"
-    )
-
-    button_play = ttk.Button(
-        root,
-        text="Play TTS",
-        command=play_tts
-    )
-    button_play.grid(
-        row=3, column=1,
-        padx=10, pady=10,
-        sticky="e"
-    )
-
-    root.mainloop()
+    a = GUI_INTERFACE()
