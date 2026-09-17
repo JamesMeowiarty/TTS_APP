@@ -1,7 +1,8 @@
 import os.path as path
+import sys
 import yaml
 
-from pathlib import Path
+from pathlib import Path as Pathlib
 
 CLASS_MEMEBERS = ['audio_device', 'tts_voice']
 class TTS_CONFIG():
@@ -13,7 +14,12 @@ class TTS_CONFIG():
 
     def _initialize_variables(self):
         try:
-            with open(path.join(Path(__file__).resolve().parent ,'config.yaml'), 'r') as file:
+            config_path = None
+            if getattr(sys, "frozen", False):
+                config_path = Pathlib(sys.executable).resolve().parent
+            else:
+                config_path = Pathlib(__file__).resolve().parent
+            with open(path.join(config_path ,'config.yaml'), 'r') as file:
                 service = yaml.safe_load(file)
                 for key, value in service.items():
                     setattr(self, key, value)
@@ -26,7 +32,12 @@ class TTS_CONFIG():
             'tts_voice': self.tts_voice
         }
 
-        with open(path.join(Path(__file__).resolve().parent, 'config.yaml'), 'w') as config_file:
+        config_path = None
+        if getattr(sys, "frozen", False):
+            config_path = Pathlib(sys.executable).resolve().parent
+        else:
+            config_path = Pathlib(__file__).resolve().parent
+        with open(path.join(config_path, 'config.yaml'), 'w') as config_file:
             yaml.dump(config, config_file, default_flow_style=False)
 
     def get_audio_device(self):

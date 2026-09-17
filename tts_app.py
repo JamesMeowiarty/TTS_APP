@@ -1,9 +1,10 @@
 import os
 import pyaudio
+import sys
 
 from glob import glob
 from os import path
-from pathlib import Path
+from pathlib import Path as Pathlib
 from piper.voice import PiperVoice
 
 class TTS_APP():
@@ -48,11 +49,21 @@ class TTS_APP():
         return self.available_models
 
     def update_voices(self):
-        self.available_models = [path.basename(x) for x in glob(path.join(Path(__file__).resolve().parent, 'Voices', '*.onnx'))]
+        voice_path = None
+        if getattr(sys, "frozen", False):
+            voice_path = Pathlib(sys.executable).resolve().parent
+        else:
+            voice_path = Pathlib(__file__).resolve().parent
+        self.available_models = [path.basename(x) for x in glob(path.join(voice_path, 'Voices', '*.onnx'))]
 
     def play_tts(self, text, voice, audio_output_index):
         if voice != self.voice:
-            self.voice = PiperVoice.load(path.join(path.join(Path(__file__).resolve().parent, 'Voices', voice)))
+            voice_path = None
+            if getattr(sys, "frozen", False):
+                voice_path = Pathlib(sys.executable).resolve().parent
+            else:
+                voice_path = Pathlib(__file__).resolve().parent
+            self.voice = PiperVoice.load(path.join(voice_path, 'Voices', voice))
             self.prev_voice = voice
         chunks = self.voice.synthesize(text)
         first_chunk = next(chunks)
