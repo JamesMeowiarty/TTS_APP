@@ -3,11 +3,13 @@ import os
 
 from tkinter import ttk
 from tts_app import TTS_APP
+from tts_config import TTS_CONFIG
 
 
 class GUI_INTERFACE():
     def __init__(self):
         self.tts_app = TTS_APP()
+        self.tts_config = TTS_CONFIG()
         self.audio_devices = None
         self.get_audio_devices()
         self.create_gui()
@@ -35,45 +37,54 @@ class GUI_INTERFACE():
         audio_outputs = self.tts_app.get_audio_devices()
         self.combobox_audio_output['values'] = list(audio_outputs.keys())
         try:
-            self.combobox_audio_output.current(list(self.audio_devices.keys()).index('default'))
+            self.combobox_audio_output.current(list(self.audio_devices.keys()).index(self.tts_config.get_audio_device()))
         except ValueError:
             self.combobox_audio_output.current(0)
 
+    def on_close(self):
+        self.tts_config.update_config(self.combobox_audio_output.get(), self.combobox_piper_voice.get())
+        self.root.destroy()
+
     def create_gui(self):
-        root = tk.Tk()
-        root.title("TTS Player")
-        root.geometry("500x250")
+        self.root = tk.Tk()
+        self.root.title("TTS Player")
+        self.root.geometry("500x250")
 
-        root.columnconfigure(1, weight=1)
-        root.rowconfigure(2, weight=1)
+        self.root.columnconfigure(1, weight=1)
+        self.root.rowconfigure(2, weight=1)
 
-        ttk.Label(root, text="Audio Outout").grid(row=0, column=0, padx=10, pady=10, sticky="w")
+        ttk.Label(self.root, text="Audio Outout").grid(row=0, column=0, padx=10, pady=10, sticky="w")
 
-        self.combobox_audio_output = ttk.Combobox(root, values=list(self.audio_devices.keys()), state="readonly")
+        self.combobox_audio_output = ttk.Combobox(self.root, values=list(self.audio_devices.keys()), state="readonly")
         self.refresh_audio()
         self.combobox_audio_output.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
 
-        button_audio_refresh = tk.Button(root, text="Refresh", command=self.refresh_audio)
+        button_audio_refresh = tk.Button(self.root, text="Refresh", command=self.refresh_audio)
         button_audio_refresh.grid(row=0, column=2, pady=10, sticky="ew")
 
-        ttk.Label(root, text="Piper TTS Voice").grid(row=1, column=0, padx=10, pady=10, sticky="w")
+        ttk.Label(self.root, text="Piper TTS Voice").grid(row=1, column=0, padx=10, pady=10, sticky="w")
 
         piper_voices = self.tts_app.get_voices()
-        self.combobox_piper_voice = ttk.Combobox(root, values=piper_voices, state="readonly")
+        self.combobox_piper_voice = ttk.Combobox(self.root, values=piper_voices, state="readonly")
         if len(piper_voices) > 0:
-            self.combobox_piper_voice.current(0)
+            try:
+                self.combobox_piper_voice.current(piper_voices.index(self.tts_config.get_tts_voice()))
+            except ValueError:
+                self.combobox_piper_voice.current(0)
         self.combobox_piper_voice.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
 
-        button_piper_refresh = tk.Button(root, text="Refresh", command=self.refresh_piper)
+        button_piper_refresh = tk.Button(self.root, text="Refresh", command=self.refresh_piper)
         button_piper_refresh.grid(row=1, column=2, pady=10, sticky="ew")
 
-        self.text_text_box = tk.Text(root, height=5, wrap="word")
+        self.text_text_box = tk.Text(self.root, height=5, wrap="word")
         self.text_text_box.grid(row=2, column=0, columnspan=3, padx=10, pady=10,sticky="nsew")
 
-        button_play = ttk.Button(root, text="Play TTS", command=self.play_tts)
+        button_play = ttk.Button(self.root, text="Play TTS", command=self.play_tts)
         button_play.grid(row=3, column=1, padx=10, pady=10, sticky="e")
 
-        root.mainloop()
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+
+        self.root.mainloop()
 
 if __name__ == '__main__':
     a = GUI_INTERFACE()

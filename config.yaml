@@ -1,0 +1,2 @@
+audio_device: default
+tts_voice: en_US-ljspeech-high.onnx
