@@ -1,5 +1,4 @@
 import tkinter as tk
-import os
 
 from tkinter import ttk
 from tts_app import TTS_APP
@@ -23,15 +22,21 @@ class GUI_INTERFACE():
             # Clears Text Box since the box may be filled with spaces or tabs
             self.text_text_box.delete('1.0', tk.END)
             return
-        self.tts_app.play_tts(text, self.combobox_piper_voice.get(), self.audio_devices[self.combobox_audio_output.get()])
-        self.text_text_box.delete('1.0', tk.END)
+        if self.tts_app.play_tts(text, self.combobox_piper_voice.get(), self.audio_devices[self.combobox_audio_output.get()]):
+            self.text_text_box.delete('1.0', tk.END)
+        else:
+            # TODO: Add popup warning
+            pass
 
     def refresh_piper(self):
         self.tts_app.update_voices()
         piper_voices = self.tts_app.get_voices()
         self.combobox_piper_voice['values'] = piper_voices
         if len(piper_voices) > 0:
-            self.combobox_piper_voice.current(0)
+            try:
+                self.combobox_piper_voice.current(piper_voices.index(self.tts_config.get_tts_voice()))
+            except ValueError:
+                self.combobox_piper_voice.current(0)
 
     def refresh_audio(self):
         audio_outputs = self.tts_app.get_audio_devices()
@@ -64,13 +69,8 @@ class GUI_INTERFACE():
 
         ttk.Label(self.root, text="Piper TTS Voice").grid(row=1, column=0, padx=10, pady=10, sticky="w")
 
-        piper_voices = self.tts_app.get_voices()
-        self.combobox_piper_voice = ttk.Combobox(self.root, values=piper_voices, state="readonly")
-        if len(piper_voices) > 0:
-            try:
-                self.combobox_piper_voice.current(piper_voices.index(self.tts_config.get_tts_voice()))
-            except ValueError:
-                self.combobox_piper_voice.current(0)
+        self.combobox_piper_voice = ttk.Combobox(self.root, state="readonly")
+        self.refresh_piper()
         self.combobox_piper_voice.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
 
         button_piper_refresh = tk.Button(self.root, text="Refresh", command=self.refresh_piper)

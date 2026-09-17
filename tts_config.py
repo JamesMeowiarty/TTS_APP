@@ -1,4 +1,7 @@
+import os.path as path
 import yaml
+
+from pathlib import Path
 
 CLASS_MEMEBERS = ['audio_device', 'tts_voice']
 class TTS_CONFIG():
@@ -9,8 +12,8 @@ class TTS_CONFIG():
         self._initialize_variables()
 
     def _initialize_variables(self):
-        try:            
-            with open('config.yaml', 'r') as file:
+        try:
+            with open(path.join(Path(__file__).resolve().parent ,'config.yaml'), 'r') as file:
                 service = yaml.safe_load(file)
                 for key, value in service.items():
                     setattr(self, key, value)
@@ -23,7 +26,7 @@ class TTS_CONFIG():
             'tts_voice': self.tts_voice
         }
 
-        with open('config.yaml', 'w') as config_file:
+        with open(path.join(Path(__file__).resolve().parent, 'config.yaml'), 'w') as config_file:
             yaml.dump(config, config_file, default_flow_style=False)
 
     def get_audio_device(self):

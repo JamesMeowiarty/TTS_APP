@@ -1,9 +1,9 @@
 import os
 import pyaudio
-#import string
 
 from glob import glob
 from os import path
+from pathlib import Path
 from piper.voice import PiperVoice
 
 class TTS_APP():
@@ -48,27 +48,31 @@ class TTS_APP():
         return self.available_models
 
     def update_voices(self):
-        self.available_models = [path.basename(x) for x in glob(path.join('Voices', '*.onnx'))]
+        self.available_models = [path.basename(x) for x in glob(path.join(Path(__file__).resolve().parent, 'Voices', '*.onnx'))]
 
     def play_tts(self, text, voice, audio_output_index):
         if voice != self.voice:
-            self.voice = PiperVoice.load(path.join('Voices', voice))
+            self.voice = PiperVoice.load(path.join(path.join(Path(__file__).resolve().parent, 'Voices', voice)))
             self.prev_voice = voice
         chunks = self.voice.synthesize(text)
         first_chunk = next(chunks)
 
-        stream = self.py_audio.open( # Open audio stream with correct settings
-            format=self.py_audio.get_format_from_width(first_chunk.sample_width),
-            channels=first_chunk.sample_channels,
-            rate=first_chunk.sample_rate,
-            output=True,
-            output_device_index=audio_output_index
-        )
+        try:
+            stream = self.py_audio.open(
+                format=self.py_audio.get_format_from_width(first_chunk.sample_width),
+                channels=first_chunk.sample_channels,
+                rate=first_chunk.sample_rate,
+                output=True,
+                output_device_index=audio_output_index
+            )
 
-        stream.write(first_chunk.audio_int16_bytes)
+            stream.write(first_chunk.audio_int16_bytes)
 
-        for chunk in chunks:
-            stream.write(chunk.audio_int16_bytes)
+            for chunk in chunks:
+                stream.write(chunk.audio_int16_bytes)
 
-        stream.stop_stream()
-        stream.close()
+            stream.stop_stream()
+            stream.close()
+        except OSError:
+            return False
+        return True
