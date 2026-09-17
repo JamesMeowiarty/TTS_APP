@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from tts_app import TTS_APP
 from tts_config import TTS_CONFIG
 
@@ -25,7 +25,7 @@ class GUI_INTERFACE():
         if self.tts_app.play_tts(text, self.combobox_piper_voice.get(), self.audio_devices[self.combobox_audio_output.get()]):
             self.text_text_box.delete('1.0', tk.END)
         else:
-            # TODO: Add popup warning
+            messagebox.showerror("ERROR", "Can't play audio through selected device.\nPlaease select a different audio device")
             pass
 
     def refresh_piper(self):
